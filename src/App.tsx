@@ -9,6 +9,7 @@ import AddShoppingCartIcon from "@material-ui/icons/AddShoppingCart";
 import Badge from "@material-ui/core/Badge";
 import Item from './item/item'
 import Cart from './Cart/Cart'
+import Buy from "./Buy/Buy";
 
 // Styles
 import { Wrapper, StyledButton } from "./App.styles";
@@ -24,6 +25,8 @@ export type CartItemType = {
   amount: number;
 };
 
+
+
 const getProducts = async (): Promise<CartItemType[]> =>
   await (await fetch("https://fakestoreapi.com/products")).json();
 
@@ -31,6 +34,7 @@ export default function App() {
   const { data, isLoading, error } = useQuery<CartItemType[]>("products", getProducts);
   const [cartOpen, setcartOpen] = useState(false)
   const [cartItems, setcartItems] = useState([] as CartItemType[])
+  const [buyOpened, setbuyOpened] = useState<boolean>(false);
 
   const getTotalItems = (items: CartItemType[]) =>  {
     return items.reduce((ack: number, item) => ack + item.amount, 0)
@@ -51,44 +55,53 @@ export default function App() {
     })
   }
   const handleRemoveFromCart = (id: number) => {
-  setcartItems(prev => 
-    prev.reduce((ack, item) => {
-      if (item.id === id) {
-        if (item.amount === 1) return ack;
-        return [...ack, { ...item, amount: item.amount -1}]
-      } else {
-        return [...ack, item]
-      }
-
-    }, [] as CartItemType[])
-  )
-  
-
+    setcartItems((prev) =>
+      prev.reduce((ack, item) => {
+        if (item.id === id) {
+          if (item.amount === 1) return ack;
+          return [...ack, { ...item, amount: item.amount - 1 }];
+        } else {
+          return [...ack, item];
+        }
+      }, [] as CartItemType[])
+    );
   }
+
+  const HandleBuyModal = () => {
+    setbuyOpened(!buyOpened);
+  };
 
   if (isLoading) return <LinearProgress  />;;
   if (error) return <div>Something went wrong</div>;;
   return (
     <Wrapper>
-      <Drawer anchor='right' open={cartOpen} onClose={() => setcartOpen(false)}>
-        <Cart 
+      <Buy           
+        addToCart={handleAddToCart}
+        removeFromCart={handleRemoveFromCart} 
         cartItems={cartItems} 
-        addToCart={handleAddToCart} 
-        removeFromCart={handleRemoveFromCart}
+        buyOpened={buyOpened} 
+        openBuyModal={HandleBuyModal}    
+        />
+      <Drawer anchor="right" open={cartOpen} onClose={() => setcartOpen(false)}>
+        <Cart
+          cartItems={cartItems}
+          addToCart={handleAddToCart}
+          removeFromCart={handleRemoveFromCart}
+          openBuyModal={HandleBuyModal}
         />
       </Drawer>
-      <StyledButton onClick={() => setcartOpen(true)} >
-        <Badge badgeContent={getTotalItems(cartItems)} color='error'>
-          <AddShoppingCartIcon/>
+      <StyledButton onClick={() => setcartOpen(true)}>
+        <Badge badgeContent={getTotalItems(cartItems)} color="error">
+          <AddShoppingCartIcon />
         </Badge>
       </StyledButton>
       <Grid container spacing={3}>
         {data?.map((item) => (
           <Grid item key={item.id} xs={12} sm={4}>
-            <Item item={item} handleAddToCart={handleAddToCart} ></Item>
+            <Item item={item} handleAddToCart={handleAddToCart}></Item>
           </Grid>
         ))}
       </Grid>
     </Wrapper>
-  )
+  );
 }
